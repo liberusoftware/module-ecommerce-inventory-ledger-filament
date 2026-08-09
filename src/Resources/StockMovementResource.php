@@ -22,6 +22,7 @@ use Liberu\Ecommerce\InventoryLedger\Filament\Resources\StockMovementResource\Pa
 use Liberu\Ecommerce\InventoryLedger\Filament\Support\LedgerWrite;
 use Liberu\Ecommerce\InventoryLedger\Filament\Support\MovementFields;
 use Liberu\Ecommerce\InventoryLedger\Filament\Support\PanelActor;
+use Liberu\Ecommerce\InventoryLedger\Models\InventoryItem;
 use Liberu\Ecommerce\InventoryLedger\Models\StockMovement;
 use UnitEnum;
 
@@ -190,6 +191,12 @@ class StockMovementResource extends Resource
                 SelectFilter::make('inventory_item_id')
                     ->label('Item')
                     ->relationship('item', 'sku')
+                    // `sku` is nullable, and a null option label is not a blank
+                    // row in the dropdown — it is a type error inside Filament
+                    // that takes the whole filter bar down with it. An item
+                    // with no SKU is ordinary, so it gets a label rather than
+                    // an exception.
+                    ->getOptionLabelFromRecordUsing(fn (InventoryItem $record): string => $record->sku ?? 'Product #'.$record->product_id)
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('location_id')

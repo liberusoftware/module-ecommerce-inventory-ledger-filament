@@ -78,10 +78,13 @@ it('points at the first movement whose recorded balance stopped tracking', funct
 
     // The model refuses this, so the query builder is the only way to make a
     // trail that stops adding up — which is exactly the corruption the runbook
-    // says to walk the rows looking for.
+    // says to walk the rows looking for. The delta and not the recorded
+    // balance, so the balance stops agreeing with the sum as well: the widget
+    // lists what disagrees, and a trail that diverges under a balance that
+    // still adds up is a fault nothing has noticed yet.
     DB::table('ecommerce_inventory_ledger_movements')
         ->where('id', $second->getKey())
-        ->update(['on_hand_after' => 99]);
+        ->update(['on_hand_delta' => 99]);
 
     expect(LedgerBreaks::firstBreak((int) $item->getKey(), (int) $location->getKey()))->toBe((int) $second->getKey());
 

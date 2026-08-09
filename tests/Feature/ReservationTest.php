@@ -19,10 +19,15 @@ it('lists holds at the team\'s own locations and no others', function () {
     stocked($item, $mine, 10);
     stocked($item, $theirs, 10);
 
+    // Both holds before the component mounts: a record created inside the
+    // assertion chain did not exist when the table ran its query.
+    $ours = held($item, $mine, 2);
+    $notOurs = held($item, $theirs, 2);
+
     Livewire::test(ListStockReservations::class)
         ->assertOk()
-        ->assertCanSeeTableRecords([held($item, $mine, 2)])
-        ->assertCanNotSeeTableRecords([held($item, $theirs, 2)]);
+        ->assertCanSeeTableRecords([$ours])
+        ->assertCanNotSeeTableRecords([$notOurs]);
 });
 
 it('offers no way to create, edit or delete a hold', function () {

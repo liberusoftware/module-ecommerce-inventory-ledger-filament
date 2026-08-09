@@ -25,8 +25,8 @@ it('has no route to an edit or create page even by name', function () {
 
     // Not merely absent from the navigation: unregistered, so anything that
     // asks for the URL fails loudly rather than linking somewhere blank.
-    expect(fn (): string => StockMovementResource::getUrl('create'))->toThrow(Throwable::class)
-        ->and(fn (): string => StockMovementResource::getUrl('edit', ['record' => $movement]))->toThrow(Throwable::class)
+    expect(fn (): string => StockMovementResource::getUrl('create'))->toThrow(Exception::class)
+        ->and(fn (): string => StockMovementResource::getUrl('edit', ['record' => $movement]))->toThrow(Exception::class)
         ->and(StockMovementResource::getUrl('index'))->toBeString();
 });
 
