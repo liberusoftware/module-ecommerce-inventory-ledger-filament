@@ -43,7 +43,10 @@ it('offers no way to create, edit or delete a hold', function () {
     expect(array_keys(StockReservationResource::getPages()))->toBe(['index'])
         ->and(StockReservationResource::canCreate())->toBeFalse()
         ->and(StockReservationResource::canEdit($hold))->toBeFalse()
-        ->and(StockReservationResource::canDelete($hold))->toBeFalse();
+        ->and(StockReservationResource::canDelete($hold))->toBeFalse()
+        // The bulk half as well. A bulk write to a ledger is a hundred rows
+        // nobody reviewed, attributed to one click.
+        ->and(StockReservationResource::canDeleteAny())->toBeFalse();
 });
 
 it('releases a hold through the domain action', function () {
