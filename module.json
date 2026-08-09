@@ -1,0 +1,42 @@
+{
+    "$schema": "https://schemas.liberu.dev/module/v1.json",
+    "name": "ecommerce-inventory-ledger-filament",
+    "display_name": "Inventory Ledger Administration",
+    "description": "Optional Filament administration for the Inventory Ledger domain module: the movement trail an investigation actually reads, the balances projected from it, the holds keeping stock out of available-to-sell, and the integrity check that says whether the two still agree.",
+    "version": "0.1.0",
+    "category": "presentation",
+    "provider": "Liberu\\Ecommerce\\InventoryLedger\\Filament\\InventoryLedgerFilamentServiceProvider",
+    "requires": {
+        "php": "^8.5",
+        "laravel": "^13.0",
+        "packages": {
+            "liberusoftware/module-manager": "^1.4",
+            "liberusoftware/ecommerce-inventory-ledger": "^0.1"
+        }
+    },
+    "presentation": {
+        "filament": {
+            "admin": [
+                "Liberu\\Ecommerce\\InventoryLedger\\Filament\\InventoryLedgerPlugin"
+            ]
+        }
+    },
+    "capabilities": [
+        "ecommerce.inventory-ledger.filament"
+    ],
+    "default_enabled": false,
+    "features": [
+        "Movement trail",
+        "Ledger filters by item, location, type, reason and date",
+        "Running balances on every row",
+        "Corrections as new movements",
+        "Stock balances",
+        "Stock counts",
+        "Adjustments with enforced reason codes",
+        "Reservations and releases",
+        "Locations",
+        "Ledger integrity check",
+        "First-divergence detection",
+        "Team scoping"
+    ]
+}
