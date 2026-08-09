@@ -1,6 +1,6 @@
 # Ecommerce: Inventory Ledger Filament
 
-> This optional Filament 5 presentation package presents exactly one independent domain module. It contributes reusable resources, pages, widgets, schemas, tables, infolists, and actions to application-owned panels while delegating authorization, validation, tenancy, persistence, and business rules to the ecommerce-inventory-ledger public boundary.
+> This optional Filament 5 presentation package presents exactly one independent domain module. It contributes reusable resources, pages, widgets, schemas, tables, infolists, and actions to application-owned panels while delegating authorization, validation, tenancy, persistence, and business rules to the [ecommerce-inventory-ledger](https://github.com/liberusoftware/module-ecommerce-inventory-ledger) public boundary.
 
 [Software](https://liberusoftware.com) ·
 [Hosting](https://liberuhosting.com) ·
@@ -17,6 +17,42 @@
 - Reusable, presenting a clean public contract and boundaries.
 - Adheres to the strict database, security, and authorization standards of Liberu.
 
+## The rule that shapes this package
+
+**The ledger is append-only, and the UI does not pretend otherwise.**
+
+`StockMovement` refuses updates and deletes at the model. So there is no edit
+action and no delete action on a movement — a resource scaffolded from habit
+offers both and fails at the model, which is a worse experience than not offering
+them. A correction is a **new** movement with reason `Correction` and a note,
+recorded from the row it corrects.
+
+Balances are read-only for the same reason one step down: every write goes
+through a domain action, because anything incrementing a column directly makes
+`LedgerIntegrity::discrepancies()` non-empty.
+
+## What it contributes
+
+| Surface | Covers |
+| --- | --- |
+| `Resources\StockMovementResource` (list) | The trail — filterable by item, location, type, reason, shrinkage and date, every row carrying the `on_hand_after` and `available_after` it recorded. Row action: record a correction |
+| `Resources\StockLevelResource` (list) | On hand, reserved and available per item and location. Row actions: record a count, adjust, open the movement trail for that one balance |
+| `Resources\StockReservationResource` (list) | Stock spoken for, the overdue holds a stalled sweep leaves behind, and releasing one |
+| `Resources\InventoryLocationResource` (list, create, edit) | Where stock is held — the only thing here a panel may create, and where tenancy lives |
+| `Widgets\StockOverview` | Locations, on hand, reserved, and whether the balances can be believed |
+| `Widgets\LedgerDiscrepancies` | Balances that disagree with their own history, both numbers side by side, and the first movement where the trail stops adding up |
+
+An operator comes here to answer one question — *why does this say 3 when the
+shelf has 5* — so the movement trail is the centre of the package rather than a
+sub-tab, and `LedgerIntegrity` is on the dashboard rather than in a document. A
+discrepancy nobody sees is a stock count nobody trusts.
+
+Every write goes through a `Liberu\Ecommerce\InventoryLedger\Actions\*` action, so
+`StockMovementRecorded` and `ReservationStatusChanged` are dispatched from the
+panel exactly as they are from anywhere else. Reason codes come from
+`MovementReason::cases()` and the note is required exactly when `requiresNote()`
+says so, rather than from a list kept here that would drift.
+
 ## Requirements
 
 - **PHP 8.5**
@@ -25,14 +61,60 @@
 
 ## Quick start
 
-To install this package via Composer, run:
+The domain package this presents is not on Packagist, so add its repository
+alongside the requirement:
 
 ```bash
-composer require liberusoftware/module-ecommerce-inventory-ledger-filament
+composer config repositories.ecommerce-inventory-ledger vcs https://github.com/liberusoftware/module-ecommerce-inventory-ledger
+composer require liberusoftware/ecommerce-inventory-ledger-filament
 ```
+
+Installing boots nothing — the package ships no `extra.laravel.providers`. Enable
+the module and the domain module it presents:
+
+```dotenv
+MODULES_ENABLED=ecommerce-inventory-ledger,ecommerce-inventory-ledger-filament
+```
+
+Then attach the plugin to whichever panel should carry these resources. The
+application owns its panels; this package never registers itself into one:
+
+```php
+use Filament\Panel;
+use Filament\PanelProvider;
+use Liberu\Ecommerce\InventoryLedger\Filament\InventoryLedgerPlugin;
+
+class AdminPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->path('admin')
+            ->plugins([
+                InventoryLedgerPlugin::make(),
+            ]);
+    }
+}
+```
+
+The plugin's id is `liberu-ecommerce-inventory-ledger`, and `module.json` declares
+it under `presentation.filament.admin`.
+
+The resources scope themselves to the team the panel user is working in — the
+`current_team_id` `InventoryLocationPolicy` reads — rather than to Filament's
+tenant, so the plugin works on a panel with no tenancy configured at all.
 
 ## Documentation
 
+- [Adoption and upgrade](docs/adoption.md) — installing, enabling the module,
+  attaching the plugin to a panel, and what the application must provide
+- [Presentation](docs/presentation.md) — the surface inventory, navigation,
+  authorization, the domain action behind every write, theme integration,
+  accessibility, and what is deliberately left out
+- [Runbook](docs/runbook.md) — production failure modes and the operator's
+  response to each
+- [Changelog](CHANGELOG.md) — release notes
 - [Liberu Main Documentation](https://github.com/liberusoftware/documentation)
 - [Architecture & Standards Index](https://github.com/liberusoftware/documentation/tree/main/architecture)
 
